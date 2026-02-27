@@ -45,7 +45,7 @@ const Contact = () => {
                 <span className="w-6 md:w-8 h-[1px] bg-accent" />
                 <span className="text-sm md:text-base">Available for new projects</span>
               </p>
-              <h3 className="text-lg md:text-xl font-bold">hello@adwaid.design</h3>
+              <h3 className="text-lg md:text-xl font-bold">ad77arts@gmail.com</h3>
             </div>
           </div>
           

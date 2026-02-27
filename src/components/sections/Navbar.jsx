@@ -41,7 +41,7 @@ const Navbar = () => {
     <nav className={`fixed w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-md py-4 shadow-sm' : 'bg-transparent py-6'}`}>
       <div className="container-custom flex justify-between items-center">
         <Link to="/" className="text-2xl font-bold tracking-tighter text-primary">
-          ADWAID.
+          AD77.
         </Link>
 
         {/* Desktop Nav */}

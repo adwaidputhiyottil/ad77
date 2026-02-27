@@ -54,7 +54,7 @@ const ProjectDetails = () => {
               <div className="flex space-x-12 pt-8 border-t border-neutral-100">
                 <div>
                   <h3 className="text-xs font-black uppercase tracking-widest text-neutral-400 mb-2">Designer</h3>
-                  <p className="font-bold">Adwaid</p>
+                  <p className="font-bold">AD77 Designs</p>
                 </div>
                 <div>
                   <h3 className="text-xs font-black uppercase tracking-widest text-neutral-400 mb-2">Year</h3>
