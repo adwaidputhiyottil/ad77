@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #101010;
+  --color-accent: #f97316;
+  --color-neutral-100: #f8fafc;
+  --color-neutral-200: #f1f5f9;
+  --color-neutral-300: #e2e8f0;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-neutral-100 text-primary font-sans antialiased m-0 p-0 block;
+    min-height: auto;
+    display: block;
+    place-items: initial;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-bold tracking-tight;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-6 py-3 bg-primary text-white rounded-xl font-medium transition-all duration-300 hover:bg-zinc-800 hover:scale-[1.02] active:scale-[0.98] shadow-lg inline-flex items-center justify-center;
+  }
+
+  .btn-outline {
+    @apply px-6 py-3 border-2 border-primary text-primary rounded-xl font-medium transition-all duration-300 hover:bg-primary hover:text-white hover:scale-[1.02] active:scale-[0.98] inline-flex items-center justify-center;
+  }
+
+  .card {
+    @apply bg-white p-6 rounded-2xl shadow-sm border border-neutral-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+  }
+
+  .container-custom {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .section-title {
+    @apply text-4xl md:text-5xl lg:text-6xl mb-8 font-bold;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 bg-neutral-100 border-none rounded-xl focus:ring-2 focus:ring-accent outline-none transition-all;
+  }
+}
