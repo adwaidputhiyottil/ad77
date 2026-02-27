@@ -6,7 +6,11 @@ const ProjectModal = ({ project, categories, onClose, onSave }) => {
 
   const safeCategories = Array.isArray(categories) && categories.length > 0
     ? categories
-    : ['General'];
+    : ['Sports Design',
+      'Branding',
+      'Logo Design',
+      'Illustration'
+    ];
 
   const [formData, setFormData] = useState(
     project || {
