@@ -58,7 +58,7 @@ const Projects = () => {
           </div>
         </div>
 
-        <motion.div layout className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           <AnimatePresence mode="popLayout">
             {filteredProjects.map((project) => (
               <motion.div
@@ -68,7 +68,7 @@ const Projects = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.4 }}
-                className="group relative bg-white rounded-3xl overflow-hidden border border-neutral-200"
+                className="group relative bg-white rounded-2xl md:rounded-3xl overflow-hidden border border-neutral-200"
               >
                 <div className="aspect-[16/10] overflow-hidden">
                   <img
@@ -86,7 +86,7 @@ const Projects = () => {
                   </div>
                 </div>
 
-                <div className="p-6 md:p-8">
+                <div className="p-5 md:p-6">
                   <div className="flex items-center space-x-2 mb-2 md:mb-3">
                     <span className="w-6 md:w-8 h-[1px] bg-accent" />
                     <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-accent">
@@ -94,7 +94,7 @@ const Projects = () => {
                     </span>
                   </div>
 
-                  <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4">
+                  <h3 className="text-lg md:text-xl font-bold mb-2 md:mb-3">
                     {project.title}
                   </h3>
 

@@ -29,7 +29,7 @@ const FeaturedProjects = () => {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
           {featured.map((project, index) => (
             <motion.div
               key={project.id}
@@ -40,7 +40,7 @@ const FeaturedProjects = () => {
               className="group cursor-pointer"
             >
               <Link to={`/projects/${project.id}`}>
-                <div className="aspect-[16/10] bg-neutral-100 rounded-2xl md:rounded-[2.5rem] overflow-hidden mb-6 md:mb-8 shadow-xl md:shadow-2xl shadow-neutral-200/50">
+                <div className="aspect-[16/10] bg-neutral-100 rounded-xl md:rounded-[2rem] overflow-hidden mb-6 md:mb-8 shadow-xl md:shadow-2xl shadow-neutral-200/50">
                   <img 
                     src={project.image} 
                     alt={project.title} 
@@ -51,7 +51,7 @@ const FeaturedProjects = () => {
                   <div className="flex items-center space-x-3 mb-2 md:mb-3">
                     <span className="text-xs font-black uppercase tracking-widest text-accent">{project.category}</span>
                   </div>
-                  <h3 className="text-2xl md:text-3xl font-black group-hover:text-accent transition-colors">{project.title}</h3>
+                  <h3 className="text-xl md:text-2xl font-black group-hover:text-accent transition-colors">{project.title}</h3>
                 </div>
               </Link>
             </motion.div>
