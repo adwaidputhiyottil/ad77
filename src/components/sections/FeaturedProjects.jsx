@@ -5,9 +5,14 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 
 const FeaturedProjects = () => {
-  const { data } = useData();
+  const { data, loading } = useData();
+
+  // 🛑 Prevent section jumping during initial load
+  if (loading) return null;
+
   // Filter for projects marked as featured and visible
-  const featured = data.projects
+  const projects = Array.isArray(data?.projects) ? data.projects : [];
+  const featured = projects
     .filter(p => p.isVisible && p.isFeatured)
     .slice(0, 4); // Display up to 4 featured projects
 

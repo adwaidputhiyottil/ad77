@@ -1,9 +1,11 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from './AuthContext';
 
 const DataContext = createContext();
 
 export const DataProvider = ({ children }) => {
+  const { isAuthenticated } = useAuth();
   const [data, setData] = useState({
     hero: null,
     about: null,
@@ -18,64 +20,64 @@ export const DataProvider = ({ children }) => {
   // =========================
   useEffect(() => {
     const fetchData = async () => {
-      const { data: hero } = await supabase
-        .from('hero')
-        .select('*')
-        .limit(1)
-        .single();
+      try {
+        const [
+          { data: hero },
+          { data: about },
+          { data: projects },
+          { data: messages }
+        ] = await Promise.all([
+          supabase.from('hero').select('*').limit(1).single(),
+          supabase.from('about').select('*').limit(1).single(),
+          supabase.from('projects').select('*').order('created_at', { ascending: false }),
+          supabase.from('messages').select('*').order('created_at', { ascending: false })
+        ]);
 
-      const { data: about } = await supabase
-        .from('about')
-        .select('*')
-        .limit(1)
-        .single();
+        // 🔁 Format projects to frontend shape
+        const formattedProjects = (projects || []).map(p => ({
+          id: p.id,
+          title: p.title,
+          description: p.description,
+          image: p.image,
+          category: p.category,
+          details: p.details,
+          isVisible: p.isvisible ?? true,
+          isFeatured: p.isfeatured ?? false
+        }));
 
-      const { data: projects } = await supabase
-        .from('projects')
-        .select('*')
-        .order('created_at', { ascending: false });
+        // 🔁 Format messages to frontend shape
+        const formattedMessages = (messages || []).map(m => ({
+          ...m,
+          date: m.created_at // Ensure UI has a 'date' field
+        }));
 
-      const { data: messages } = await supabase
-        .from('messages')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      // 🔁 Format projects to frontend shape
-      const formattedProjects = (projects || []).map(p => ({
-        id: p.id,
-        title: p.title,
-        description: p.description,
-        image: p.image,
-        category: p.category,
-        details: p.details,
-        isVisible: p.isvisible ?? true,
-        isFeatured: p.isfeatured ?? false
-      }));
-
-      setData({
-        hero: hero || null,
-        about: about
-          ? {
-              id: about.id,
-              bio: about.description,
-              experience: about.title,
-              skills: about.skills || []
-            }
-          : null,
-        projects: formattedProjects,
-        messages: messages || []
-      });
-
-      setLoading(false);
+        setData({
+          hero: hero || null,
+          about: about
+            ? {
+                id: about.id,
+                bio: about.description,
+                experience: about.title,
+                skills: about.skills || []
+              }
+            : null,
+          projects: formattedProjects,
+          messages: formattedMessages || []
+        });
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchData();
-  }, []);
+  }, [isAuthenticated]);
 
   // =========================
   // HERO
   // =========================
-  const updateHero = async (heroData) => {
+  const updateHero = useCallback(async (heroData) => {
     await supabase
       .from('hero')
       .update({
@@ -89,12 +91,12 @@ export const DataProvider = ({ children }) => {
       ...prev,
       hero: heroData
     }));
-  };
+  }, []);
 
   // =========================
   // ABOUT
   // =========================
-  const updateAbout = async (aboutData) => {
+  const updateAbout = useCallback(async (aboutData) => {
   // Always get the first existing row
   const { data: existing, error: fetchError } = await supabase
     .from('about')
@@ -147,12 +149,12 @@ export const DataProvider = ({ children }) => {
       about: { ...aboutData, id: inserted.id }
     }));
   }
-};
+}, []);
 
   // =========================
   // PROJECTS
   // =========================
-  const addProject = async (project) => {
+  const addProject = useCallback(async (project) => {
     const { data: inserted, error } = await supabase
       .from('projects')
       .insert([
@@ -189,9 +191,9 @@ export const DataProvider = ({ children }) => {
       ...prev,
       projects: [formatted, ...prev.projects]
     }));
-  };
+  }, []);
 
-  const updateProject = async (id, project) => {
+  const updateProject = useCallback(async (id, project) => {
     const { error } = await supabase
       .from('projects')
       .update({
@@ -216,18 +218,18 @@ export const DataProvider = ({ children }) => {
         p.id === id ? { ...project } : p
       )
     }));
-  };
+  }, []);
 
-  const deleteProject = async (id) => {
+  const deleteProject = useCallback(async (id) => {
     await supabase.from('projects').delete().eq('id', id);
 
     setData(prev => ({
       ...prev,
       projects: prev.projects.filter(p => p.id !== id)
     }));
-  };
+  }, []);
 
-  const toggleProjectVisibility = async (id) => {
+  const toggleProjectVisibility = useCallback(async (id) => {
     const project = data.projects.find(p => p.id === id);
     if (!project) return;
 
@@ -249,9 +251,9 @@ export const DataProvider = ({ children }) => {
         p.id === id ? { ...p, isVisible: newValue } : p
       )
     }));
-  };
+  }, [data.projects]);
 
-  const toggleProjectFeatured = async (id) => {
+  const toggleProjectFeatured = useCallback(async (id) => {
     const project = data.projects.find(p => p.id === id);
     if (!project) return;
 
@@ -273,12 +275,12 @@ export const DataProvider = ({ children }) => {
         p.id === id ? { ...p, isFeatured: newValue } : p
       )
     }));
-  };
+  }, [data.projects]);
 
   // =========================
   // MESSAGES
   // =========================
-  const addMessage = async (message) => {
+  const addMessage = useCallback(async (message) => {
     const { data: inserted } = await supabase
       .from('messages')
       .insert([message])
@@ -289,36 +291,54 @@ export const DataProvider = ({ children }) => {
       ...prev,
       messages: [inserted, ...prev.messages]
     }));
-  };
+  }, []);
 
-  const deleteMessage = async (id) => {
+  const deleteMessage = useCallback(async (id) => {
     await supabase.from('messages').delete().eq('id', id);
 
     setData(prev => ({
       ...prev,
       messages: prev.messages.filter(m => m.id !== id)
     }));
-  };
+  }, []);
+
+  const value = useMemo(() => ({
+    data,
+    loading,
+    updateHero,
+    updateAbout,
+    addProject,
+    updateProject,
+    deleteProject,
+    toggleProjectVisibility,
+    toggleProjectFeatured,
+    addMessage,
+    deleteMessage
+  }), [
+    data,
+    loading,
+    updateHero,
+    updateAbout,
+    addProject,
+    updateProject,
+    deleteProject,
+    toggleProjectVisibility,
+    toggleProjectFeatured,
+    addMessage,
+    deleteMessage
+  ]);
 
   return (
-    <DataContext.Provider
-      value={{
-        data,
-        loading,
-        updateHero,
-        updateAbout,
-        addProject,
-        updateProject,
-        deleteProject,
-        toggleProjectVisibility,
-        toggleProjectFeatured,
-        addMessage,
-        deleteMessage
-      }}
-    >
+    <DataContext.Provider value={value}>
       {children}
     </DataContext.Provider>
   );
 };
 
-export const useData = () => useContext(DataContext);
+export const useData = () => {
+  const context = useContext(DataContext);
+  if (!context) {
+    throw new Error('useData must be used within a DataProvider');
+  }
+  return context;
+};

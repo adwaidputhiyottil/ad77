@@ -7,12 +7,17 @@ import { Link } from 'react-router-dom';
 const Hero = () => {
   const { data, loading } = useData();
 
-  // 🛑 Prevent crash while loading or if hero is null
-  if (loading || !data?.hero) {
-    return null;
+  // 🛑 Consistent height during loading to prevent layout shifts
+  if (loading) {
+    return <section className="relative min-h-screen bg-neutral-100 flex items-center pt-20" />;
   }
 
-  const { hero } = data;
+  // 🛡️ Defensive mapping to support both Supabase and mockData structures
+  const hero = {
+    title: data?.hero?.title || data?.hero?.heading || "Creative Designer",
+    subheading: data?.hero?.subheading || "Portfolio",
+    description: data?.hero?.description || data?.hero?.tagline || ""
+  };
 
   return (
     <section className="relative min-h-screen flex items-center pt-20 overflow-hidden bg-neutral-100">

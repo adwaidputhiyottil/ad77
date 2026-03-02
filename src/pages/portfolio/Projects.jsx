@@ -7,7 +7,13 @@ import { Link } from "react-router-dom";
 const Projects = () => {
   const { data, loading } = useData();
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="pt-24 md:pt-32 pb-16 md:pb-24 bg-neutral-100 min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary/10 border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   const projects = Array.isArray(data?.projects) ? data.projects : [];
 
