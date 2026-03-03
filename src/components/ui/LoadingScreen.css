@@ -1,0 +1,129 @@
+.loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #101010;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.loader-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loader-logo {
+  color: #fff;
+  font-family: "Inter", sans-serif;
+  font-weight: 800;
+  font-size: 1.5rem;
+  letter-spacing: 2px;
+  z-index: 10;
+  animation: pulse-text 2s ease-in-out infinite;
+}
+
+.loader-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: #f97316;
+  animation: rotate 2s linear infinite;
+}
+
+.loader-ring:nth-child(1) {
+  width: 100%;
+  height: 100%;
+  animation-duration: 1.5s;
+}
+
+.loader-ring:nth-child(2) {
+  width: 80%;
+  height: 80%;
+  animation-duration: 2s;
+  animation-direction: reverse;
+  border-top-color: #fff;
+}
+
+.loader-ring:nth-child(3) {
+  width: 60%;
+  height: 60%;
+  animation-duration: 1s;
+  border-top-color: #f97316;
+}
+
+.loading-bar-container {
+  width: 200px;
+  height: 2px;
+  background-color: rgba(255, 255, 255, 0.1);
+  margin-top: 40px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 1px;
+}
+
+.loading-bar {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: #f97316;
+  animation: loading-progress 2s cubic-bezier(0.1, 0, 0.45, 1) infinite;
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse-text {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes loading-progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+.loading-screen.fade-out {
+  animation: fade-out 0.5s ease forwards;
+}

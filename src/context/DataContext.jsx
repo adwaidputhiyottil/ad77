@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
+import LoadingScreen from '../components/ui/LoadingScreen';
 
 const DataContext = createContext();
 
@@ -330,6 +331,7 @@ export const DataProvider = ({ children }) => {
 
   return (
     <DataContext.Provider value={value}>
+      {loading && <LoadingScreen />}
       {children}
     </DataContext.Provider>
   );
