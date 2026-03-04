@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useMemo, useCallback } from 
 import { useAuth } from './AuthContext';
 import { supabase } from '../lib/supabase';
 import LoadingScreen from '../components/ui/LoadingScreen';
+import { initialData } from '../data/mockData';
 
 export const DataContext = createContext();
 
@@ -9,10 +10,12 @@ export const DataProvider = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(true);
   const [showLoading, setShowLoading] = useState(true);
+  
+  // Initialize with mock data to prevent "Creative Designer" fallback shifts
   const [data, setData] = useState({
-    hero: null,
-    about: null,
-    projects: [],
+    hero: initialData.hero,
+    about: initialData.about,
+    projects: initialData.projects,
     messages: []
   });
 
@@ -47,14 +50,18 @@ export const DataProvider = ({ children }) => {
         messages = msgs || [];
       }
 
-      setData({
-        hero,
+      setData(prev => ({
+        hero: hero ? {
+          title: hero.title || hero.heading,
+          subheading: hero.subheading,
+          description: hero.description || hero.tagline
+        } : prev.hero,
         about: about ? {
           bio: about.description,
           experience: about.title,
-          skills: about.skills || []
-        } : null,
-        projects: projects?.map(p => ({
+          skills: about.skills || prev.about.skills
+        } : prev.about,
+        projects: projects?.length > 0 ? projects.map(p => ({
           id: p.id,
           title: p.title,
           description: p.description,
@@ -63,7 +70,7 @@ export const DataProvider = ({ children }) => {
           tags: p.tags || [],
           link: p.project_url,
           isVisible: p.isvisible ?? true
-        })) || [],
+        })) : prev.projects,
         messages: messages.map(m => ({
           id: m.id,
           sender: m.name,
@@ -71,9 +78,10 @@ export const DataProvider = ({ children }) => {
           text: m.message,
           date: m.created_at
         }))
-      });
+      }));
     } catch (error) {
       console.error('Error fetching data:', error);
+      // Keep existing mock data on error
     } finally {
       setLoading(false);
     }
@@ -173,8 +181,6 @@ export const DataProvider = ({ children }) => {
   const addMessage = useCallback(async (message) => {
     try {
       // 🚀 PRODUCTION FIX: We insert 'blindly' for guests (no .select())
-      // Guests have 'INSERT' permission but NOT 'SELECT' for security.
-      // Trying to select the result after insert causes an RLS violation (42501).
       const { error } = await supabase
         .from('messages')
         .insert([message]);

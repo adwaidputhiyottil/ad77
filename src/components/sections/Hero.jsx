@@ -12,11 +12,11 @@ const Hero = () => {
     return <section className="relative min-h-screen bg-neutral-100 flex items-center pt-20" />;
   }
 
-  // 🛡️ Defensive mapping to support both Supabase and mockData structures
+  // 🛡️ Consistent mapping using the context data model
   const hero = {
-    title: data?.hero?.title || data?.hero?.heading || "Creative Designer",
-    subheading: data?.hero?.subheading || "Portfolio",
-    description: data?.hero?.description || data?.hero?.tagline || ""
+    title: data?.hero?.title || "Graphic Designer",
+    subheading: data?.hero?.subheading || "AD77 DESIGN",
+    description: data?.hero?.description || "Crafting premium visual identities, digital illustrations, and high-impact sports branding."
   };
 
   return (
