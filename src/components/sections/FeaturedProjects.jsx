@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useData } from '../../context/DataContext';
+import { useData } from '../../hooks/useData';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 
@@ -49,6 +49,7 @@ const FeaturedProjects = () => {
                   <img 
                     src={project.image} 
                     alt={project.title} 
+                    loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                   />
                 </div>

@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import LoadingScreen from '../components/ui/LoadingScreen';
 
-const DataContext = createContext();
+export const DataContext = createContext();
 
 export const DataProvider = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -15,6 +15,15 @@ export const DataProvider = ({ children }) => {
   });
 
   const [loading, setLoading] = useState(true);
+  const [showLoading, setShowLoading] = useState(true);
+
+  // 🔥 Loading fade out logic
+  useEffect(() => {
+    if (!loading) {
+      const timer = setTimeout(() => setShowLoading(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
 
   // =========================
   // FETCH ALL DATA
@@ -22,19 +31,17 @@ export const DataProvider = ({ children }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Step 1: Fetch Critical Data First (Hero, About, Projects)
         const [
           { data: hero },
           { data: about },
-          { data: projects },
-          { data: messages }
+          { data: projects }
         ] = await Promise.all([
-          supabase.from('hero').select('*').limit(1).single(),
-          supabase.from('about').select('*').limit(1).single(),
-          supabase.from('projects').select('*').order('created_at', { ascending: false }),
-          supabase.from('messages').select('*').order('created_at', { ascending: false })
+          supabase.from('hero').select('id, title, subheading, description').limit(1).single(),
+          supabase.from('about').select('id, description, title, skills').limit(1).single(),
+          supabase.from('projects').select('id, title, description, image, category, details, isvisible, isfeatured').order('created_at', { ascending: false })
         ]);
 
-        // 🔁 Format projects to frontend shape
         const formattedProjects = (projects || []).map(p => ({
           id: p.id,
           title: p.title,
@@ -46,13 +53,8 @@ export const DataProvider = ({ children }) => {
           isFeatured: p.isfeatured ?? false
         }));
 
-        // 🔁 Format messages to frontend shape
-        const formattedMessages = (messages || []).map(m => ({
-          ...m,
-          date: m.created_at // Ensure UI has a 'date' field
-        }));
-
-        setData({
+        setData(prev => ({
+          ...prev,
           hero: hero || null,
           about: about
             ? {
@@ -62,12 +64,31 @@ export const DataProvider = ({ children }) => {
                 skills: about.skills || []
               }
             : null,
-          projects: formattedProjects,
-          messages: formattedMessages || []
-        });
+          projects: formattedProjects
+        }));
+
+        // ✅ Hide loading screen once critical data is ready
+        setLoading(false);
+
+        // Step 2: Fetch Non-Critical Data (Messages) only if authenticated
+        if (isAuthenticated) {
+          const { data: messages } = await supabase
+            .from('messages')
+            .select('id, name, email, message, created_at')
+            .order('created_at', { ascending: false });
+
+          if (messages) {
+            setData(prev => ({
+              ...prev,
+              messages: messages.map(m => ({
+                ...m,
+                date: m.created_at
+              }))
+            }));
+          }
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
-      } finally {
         setLoading(false);
       }
     };
@@ -98,7 +119,6 @@ export const DataProvider = ({ children }) => {
   // ABOUT
   // =========================
   const updateAbout = useCallback(async (aboutData) => {
-  // Always get the first existing row
   const { data: existing, error: fetchError } = await supabase
     .from('about')
     .select('id')
@@ -117,7 +137,6 @@ export const DataProvider = ({ children }) => {
   };
 
   if (existing) {
-    // ✅ Update existing record
     const { error } = await supabase
       .from('about')
       .update(mapped)
@@ -133,7 +152,6 @@ export const DataProvider = ({ children }) => {
       about: { ...aboutData, id: existing.id }
     }));
   } else {
-    // ✅ Insert ONLY if table is completely empty
     const { data: inserted, error } = await supabase
       .from('about')
       .insert([mapped])
@@ -282,16 +300,25 @@ export const DataProvider = ({ children }) => {
   // MESSAGES
   // =========================
   const addMessage = useCallback(async (message) => {
-    const { data: inserted } = await supabase
-      .from('messages')
-      .insert([message])
-      .select()
-      .single();
+    try {
+      const { data: inserted, error } = await supabase
+        .from('messages')
+        .insert([message])
+        .select()
+        .single();
 
-    setData(prev => ({
-      ...prev,
-      messages: [inserted, ...prev.messages]
-    }));
+      if (error) throw error;
+
+      setData(prev => ({
+        ...prev,
+        messages: [inserted, ...prev.messages]
+      }));
+      
+      return { success: true };
+    } catch (error) {
+      console.error("Add Message Error:", error);
+      return { success: false, error };
+    }
   }, []);
 
   const deleteMessage = useCallback(async (id) => {
@@ -331,16 +358,8 @@ export const DataProvider = ({ children }) => {
 
   return (
     <DataContext.Provider value={value}>
-      {loading && <LoadingScreen />}
+      {showLoading && <LoadingScreen isExiting={!loading} />}
       {children}
     </DataContext.Provider>
   );
-};
-
-export const useData = () => {
-  const context = useContext(DataContext);
-  if (!context) {
-    throw new Error('useData must be used within a DataProvider');
-  }
-  return context;
 };

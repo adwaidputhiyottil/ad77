@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useData } from '../../context/DataContext';
+import { useData } from '../../hooks/useData';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 

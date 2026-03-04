@@ -1,15 +1,19 @@
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import React, { lazy, Suspense } from 'react';
 import Navbar from './components/sections/Navbar';
 import Footer from './components/sections/Footer';
-import Home from './pages/portfolio/Home';
-import Projects from './pages/portfolio/Projects';
-import ProjectDetails from './pages/portfolio/ProjectDetails';
-import ServicesPage from './pages/portfolio/Services';
-import AdminDashboard from './pages/admin/Dashboard';
-import AdminLogin from './pages/admin/Login';
 import { DataProvider } from './context/DataContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ScrollToTop from './components/sections/ScrollToTop';
+import LoadingScreen from './components/ui/LoadingScreen';
+
+// 🚀 Lazy load pages for better performance
+const Home = lazy(() => import('./pages/portfolio/Home'));
+const Projects = lazy(() => import('./pages/portfolio/Projects'));
+const ProjectDetails = lazy(() => import('./pages/portfolio/ProjectDetails'));
+const ServicesPage = lazy(() => import('./pages/portfolio/Services'));
+const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
+const AdminLogin = lazy(() => import('./pages/admin/Login'));
 
 // Header wrapper
 const Header = () => {
@@ -47,21 +51,23 @@ function App() {
             <div className="flex flex-col min-h-screen">
               <Header />
               <main className="flex-grow">
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/projects" element={<Projects />} />
-                  <Route path="/projects/:id" element={<ProjectDetails />} />
-                  <Route path="/services" element={<ServicesPage />} />
-                  <Route path="/admin/login" element={<AdminLogin />} />
-                  <Route
-                    path="/admin"
-                    element={
-                      <ProtectedRoute>
-                        <AdminDashboard />
-                      </ProtectedRoute>
-                    }
-                  />
-                </Routes>
+                <Suspense fallback={<LoadingScreen />}>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/projects" element={<Projects />} />
+                    <Route path="/projects/:id" element={<ProjectDetails />} />
+                    <Route path="/services" element={<ServicesPage />} />
+                    <Route path="/admin/login" element={<AdminLogin />} />
+                    <Route
+                      path="/admin"
+                      element={
+                        <ProtectedRoute>
+                          <AdminDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+                  </Routes>
+                </Suspense>
               </main>
               <FooterSection />
             </div>

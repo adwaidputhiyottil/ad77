@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useData } from '../../context/DataContext';
+import { useData } from '../../hooks/useData';
 
 const About = () => {
   const { data, loading } = useData();

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, CheckCircle2 } from 'lucide-react';
-import { useData } from '../../context/DataContext';
+import { Send, CheckCircle2, XCircle } from 'lucide-react';
+import { useData } from '../../hooks/useData';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -9,19 +9,24 @@ const Contact = () => {
     email: '',
     message: ''
   });
-  const [status, setStatus] = useState('idle'); // idle, sending, success
+  const [status, setStatus] = useState('idle'); // idle, sending, success, error
   const { addMessage } = useData();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus('sending');
-    // Simulate API call
-    setTimeout(() => {
-      addMessage(formData);
+    
+    const result = await addMessage(formData);
+    
+    if (result.success) {
       setStatus('success');
       setFormData({ name: '', email: '', message: '' });
       setTimeout(() => setStatus('idle'), 5000);
-    }, 1500);
+    } else {
+      setStatus('error');
+      // Revert to idle after some time to allow retry
+      setTimeout(() => setStatus('idle'), 3000);
+    }
   };
 
   const handleChange = (e) => {
@@ -69,6 +74,26 @@ const Contact = () => {
                     className="mt-8 text-accent font-bold hover:underline"
                   >
                     Send another message
+                  </button>
+                </motion.div>
+              ) : status === 'error' ? (
+                <motion.div
+                  key="error"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="h-full flex flex-col items-center justify-center text-center py-12"
+                >
+                  <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-6">
+                    <XCircle size={40} />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-2">Oops! Something went wrong</h3>
+                  <p className="text-neutral-500">I couldn't save your message. Please check the RLS policies in Supabase or try again later.</p>
+                  <button 
+                    onClick={() => setStatus('idle')}
+                    className="mt-8 text-accent font-bold hover:underline"
+                  >
+                    Try Again
                   </button>
                 </motion.div>
               ) : (

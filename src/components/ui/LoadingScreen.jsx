@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './LoadingScreen.css';
 
-const LoadingScreen = () => {
+const LoadingScreen = ({ isExiting }) => {
+  // To preserve the UI design and logic, let's make it look smoother.
   return (
-    <div className="loading-screen">
+    <div className={`loading-screen ${isExiting ? 'fade-out' : ''}`}>
       <div className="loader-container">
         <div className="loader-ring"></div>
         <div className="loader-ring"></div>

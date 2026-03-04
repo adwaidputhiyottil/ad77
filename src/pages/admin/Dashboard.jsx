@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useData } from '../../context/DataContext';
+import { useData } from '../../hooks/useData';
 import { CheckCircle2, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 

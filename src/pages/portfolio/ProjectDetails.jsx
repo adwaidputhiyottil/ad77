@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useData } from '../../context/DataContext';
+import { useData } from '../../hooks/useData';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Share2 } from 'lucide-react';
 
