@@ -44,12 +44,6 @@ const Sidebar = ({ activeTab, setActiveTab, handleLogout, isOpen, setIsOpen }) =
             onClick={() => handleLinkClick('projects')} 
           />
           <SidebarLink 
-            icon={<FolderKanban size={20} />} 
-            label="Manage Projects" 
-            active={activeTab === 'projects'} 
-            onClick={() => handleLinkClick('projects')} 
-          />
-          <SidebarLink 
             icon={<MessageSquare size={20} />} 
             label="User Messages" 
             active={activeTab === 'messages'} 
