@@ -1,12 +1,14 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
+import React, { createContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from './AuthContext';
+import { supabase } from '../lib/supabase';
 import LoadingScreen from '../components/ui/LoadingScreen';
 
 export const DataContext = createContext();
 
 export const DataProvider = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [showLoading, setShowLoading] = useState(true);
   const [data, setData] = useState({
     hero: null,
     about: null,
@@ -14,10 +16,7 @@ export const DataProvider = ({ children }) => {
     messages: []
   });
 
-  const [loading, setLoading] = useState(true);
-  const [showLoading, setShowLoading] = useState(true);
-
-  // 🔥 Loading fade out logic
+  // Smooth loading transition
   useEffect(() => {
     if (!loading) {
       const timer = setTimeout(() => setShowLoading(false), 500);
@@ -25,294 +24,162 @@ export const DataProvider = ({ children }) => {
     }
   }, [loading]);
 
-  // =========================
-  // FETCH ALL DATA
-  // =========================
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Step 1: Fetch Critical Data First (Hero, About, Projects)
-        const [
-          { data: hero },
-          { data: about },
-          { data: projects }
-        ] = await Promise.all([
-          supabase.from('hero').select('id, title, subheading, description').limit(1).single(),
-          supabase.from('about').select('id, description, title, skills').limit(1).single(),
-          supabase.from('projects').select('id, title, description, image, category, details, isvisible, isfeatured').order('created_at', { ascending: false })
-        ]);
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      const [
+        { data: hero },
+        { data: about },
+        { data: projects }
+      ] = await Promise.all([
+        supabase.from('hero_section').select('*').limit(1).single(),
+        supabase.from('about_section').select('*').limit(1).single(),
+        supabase.from('projects').select('*').order('created_at', { ascending: false })
+      ]);
 
-        const formattedProjects = (projects || []).map(p => ({
+      let messages = [];
+      if (isAuthenticated) {
+        const { data: msgs } = await supabase
+          .from('messages')
+          .select('id, name, email, message, created_at')
+          .order('created_at', { ascending: false });
+        messages = msgs || [];
+      }
+
+      setData({
+        hero,
+        about: about ? {
+          bio: about.description,
+          experience: about.title,
+          skills: about.skills || []
+        } : null,
+        projects: projects?.map(p => ({
           id: p.id,
           title: p.title,
           description: p.description,
-          image: p.image,
+          image: p.image_url,
           category: p.category,
-          details: p.details,
-          isVisible: p.isvisible ?? true,
-          isFeatured: p.isfeatured ?? false
-        }));
-
-        setData(prev => ({
-          ...prev,
-          hero: hero || null,
-          about: about
-            ? {
-                id: about.id,
-                bio: about.description,
-                experience: about.title,
-                skills: about.skills || []
-              }
-            : null,
-          projects: formattedProjects
-        }));
-
-        // ✅ Hide loading screen once critical data is ready
-        setLoading(false);
-
-        // Step 2: Fetch Non-Critical Data (Messages) only if authenticated
-        if (isAuthenticated) {
-          const { data: messages } = await supabase
-            .from('messages')
-            .select('id, name, email, message, created_at')
-            .order('created_at', { ascending: false });
-
-          if (messages) {
-            setData(prev => ({
-              ...prev,
-              messages: messages.map(m => ({
-                ...m,
-                date: m.created_at
-              }))
-            }));
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+          tags: p.tags || [],
+          link: p.project_url,
+          isVisible: p.isvisible ?? true
+        })) || [],
+        messages: messages.map(m => ({
+          id: m.id,
+          sender: m.name,
+          email: m.email,
+          text: m.message,
+          date: m.created_at
+        }))
+      });
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
   }, [isAuthenticated]);
 
-  // =========================
-  // HERO
-  // =========================
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
   const updateHero = useCallback(async (heroData) => {
-    await supabase
-      .from('hero')
-      .update({
-        title: heroData.title,
-        subheading: heroData.subheading,
-        description: heroData.description
-      })
-      .eq('id', heroData.id);
+    try {
+      const { error } = await supabase
+        .from('hero_section')
+        .update(heroData)
+        .eq('id', data.hero.id);
+      if (error) throw error;
+      await fetchData();
+      return { success: true };
+    } catch (error) {
+      return { success: false, error };
+    }
+  }, [data.hero, fetchData]);
 
-    setData(prev => ({
-      ...prev,
-      hero: heroData
-    }));
-  }, []);
-
-  // =========================
-  // ABOUT
-  // =========================
   const updateAbout = useCallback(async (aboutData) => {
-  const { data: existing, error: fetchError } = await supabase
-    .from('about')
-    .select('id')
-    .limit(1)
-    .single();
-
-  if (fetchError && fetchError.code !== 'PGRST116') {
-    console.error("Fetch About Error:", fetchError);
-    return;
-  }
-
-  const mapped = {
-    title: aboutData.experience,
-    description: aboutData.bio,
-    skills: aboutData.skills || []
-  };
-
-  if (existing) {
-    const { error } = await supabase
-      .from('about')
-      .update(mapped)
-      .eq('id', existing.id);
-
-    if (error) {
-      console.error("Update About Error:", error);
-      return;
+    try {
+      const { error } = await supabase
+        .from('about_section')
+        .update({
+          description: aboutData.bio,
+          title: aboutData.experience,
+          skills: aboutData.skills
+        })
+        .eq('id', data.hero.id); // Assuming same ID structure
+      if (error) throw error;
+      await fetchData();
+      return { success: true };
+    } catch (error) {
+      return { success: false, error };
     }
+  }, [data.hero, fetchData]);
 
-    setData(prev => ({
-      ...prev,
-      about: { ...aboutData, id: existing.id }
-    }));
-  } else {
-    const { data: inserted, error } = await supabase
-      .from('about')
-      .insert([mapped])
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Insert About Error:", error);
-      return;
-    }
-
-    setData(prev => ({
-      ...prev,
-      about: { ...aboutData, id: inserted.id }
-    }));
-  }
-}, []);
-
-  // =========================
-  // PROJECTS
-  // =========================
   const addProject = useCallback(async (project) => {
-    const { data: inserted, error } = await supabase
-      .from('projects')
-      .insert([
-        {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .insert([{
           title: project.title,
           description: project.description,
-          image: project.image,
+          image_url: project.image,
           category: project.category,
-          details: project.details,
-          isvisible: project.isVisible ?? true,
-          isfeatured: project.isFeatured ?? false
-        }
-      ])
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Insert Error:", error);
-      return;
+          tags: project.tags,
+          project_url: project.link,
+          isvisible: true
+        }]);
+      if (error) throw error;
+      await fetchData();
+      return { success: true };
+    } catch (error) {
+      return { success: false, error };
     }
+  }, [fetchData]);
 
-    const formatted = {
-      id: inserted.id,
-      title: inserted.title,
-      description: inserted.description,
-      image: inserted.image,
-      category: inserted.category,
-      details: inserted.details,
-      isVisible: inserted.isvisible,
-      isFeatured: inserted.isfeatured
-    };
-
-    setData(prev => ({
-      ...prev,
-      projects: [formatted, ...prev.projects]
-    }));
-  }, []);
-
-  const updateProject = useCallback(async (id, project) => {
-    const { error } = await supabase
-      .from('projects')
-      .update({
-        title: project.title,
-        description: project.description,
-        image: project.image,
-        category: project.category,
-        details: project.details,
-        isvisible: project.isVisible,
-        isfeatured: project.isFeatured
-      })
-      .eq('id', id);
-
-    if (error) {
-      console.error("Update Error:", error);
-      return;
+  const toggleProjectVisibility = useCallback(async (id, isvisible) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ isvisible })
+        .eq('id', id);
+      if (error) throw error;
+      setData(prev => ({
+        ...prev,
+        projects: prev.projects.map(p => p.id === id ? { ...p, isVisible: isvisible } : p)
+      }));
+      return { success: true };
+    } catch (error) {
+      return { success: false, error };
     }
-
-    setData(prev => ({
-      ...prev,
-      projects: prev.projects.map(p =>
-        p.id === id ? { ...project } : p
-      )
-    }));
   }, []);
 
   const deleteProject = useCallback(async (id) => {
-    await supabase.from('projects').delete().eq('id', id);
-
-    setData(prev => ({
-      ...prev,
-      projects: prev.projects.filter(p => p.id !== id)
-    }));
-  }, []);
-
-  const toggleProjectVisibility = useCallback(async (id) => {
-    const project = data.projects.find(p => p.id === id);
-    if (!project) return;
-
-    const newValue = !project.isVisible;
-
-    const { error } = await supabase
-      .from('projects')
-      .update({ isvisible: newValue })
-      .eq('id', id);
-
-    if (error) {
-      console.error("Visibility Toggle Error:", error);
-      return;
-    }
-
-    setData(prev => ({
-      ...prev,
-      projects: prev.projects.map(p =>
-        p.id === id ? { ...p, isVisible: newValue } : p
-      )
-    }));
-  }, [data.projects]);
-
-  const toggleProjectFeatured = useCallback(async (id) => {
-    const project = data.projects.find(p => p.id === id);
-    if (!project) return;
-
-    const newValue = !project.isFeatured;
-
-    const { error } = await supabase
-      .from('projects')
-      .update({ isfeatured: newValue })
-      .eq('id', id);
-
-    if (error) {
-      console.error("Featured Toggle Error:", error);
-      return;
-    }
-
-    setData(prev => ({
-      ...prev,
-      projects: prev.projects.map(p =>
-        p.id === id ? { ...p, isFeatured: newValue } : p
-      )
-    }));
-  }, [data.projects]);
-
-  // =========================
-  // MESSAGES
-  // =========================
-  const addMessage = useCallback(async (message) => {
     try {
-      const { data: inserted, error } = await supabase
-        .from('messages')
-        .insert([message])
-        .select()
-        .single();
-
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', id);
       if (error) throw error;
-
       setData(prev => ({
         ...prev,
-        messages: [inserted, ...prev.messages]
+        projects: prev.projects.filter(p => p.id !== id)
       }));
+      return { success: true };
+    } catch (error) {
+      return { success: false, error };
+    }
+  }, []);
+
+  const addMessage = useCallback(async (message) => {
+    try {
+      // 🚀 PRODUCTION FIX: We insert 'blindly' for guests (no .select())
+      // Guests have 'INSERT' permission but NOT 'SELECT' for security.
+      // Trying to select the result after insert causes an RLS violation (42501).
+      const { error } = await supabase
+        .from('messages')
+        .insert([message]);
+
+      if (error) throw error;
       
       return { success: true };
     } catch (error) {
@@ -322,12 +189,20 @@ export const DataProvider = ({ children }) => {
   }, []);
 
   const deleteMessage = useCallback(async (id) => {
-    await supabase.from('messages').delete().eq('id', id);
-
-    setData(prev => ({
-      ...prev,
-      messages: prev.messages.filter(m => m.id !== id)
-    }));
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      setData(prev => ({
+        ...prev,
+        messages: prev.messages.filter(m => m.id !== id)
+      }));
+      return { success: true };
+    } catch (error) {
+      return { success: false, error };
+    }
   }, []);
 
   const value = useMemo(() => ({
@@ -336,24 +211,22 @@ export const DataProvider = ({ children }) => {
     updateHero,
     updateAbout,
     addProject,
-    updateProject,
-    deleteProject,
     toggleProjectVisibility,
-    toggleProjectFeatured,
+    deleteProject,
     addMessage,
-    deleteMessage
+    deleteMessage,
+    refreshData: fetchData
   }), [
     data,
     loading,
     updateHero,
     updateAbout,
     addProject,
-    updateProject,
-    deleteProject,
     toggleProjectVisibility,
-    toggleProjectFeatured,
+    deleteProject,
     addMessage,
-    deleteMessage
+    deleteMessage,
+    fetchData
   ]);
 
   return (
