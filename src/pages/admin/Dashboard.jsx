@@ -7,8 +7,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 // Import sub-components
 import Sidebar from '../../components/admin/Sidebar';
-import HeroManager from '../../components/admin/HeroManager';
-import AboutManager from '../../components/admin/AboutManager';
 import ProjectManager from '../../components/admin/ProjectManager';
 import ProjectModal from '../../components/admin/ProjectModal';
 import MessageManager from '../../components/admin/MessageManager';
@@ -17,8 +15,6 @@ const AdminDashboard = () => {
   const { isAuthenticated, logout } = useAuth();
   const { 
     data, 
-    updateHero, 
-    updateAbout, 
     addProject, 
     updateProject, 
     deleteProject, 
@@ -94,13 +90,6 @@ const AdminDashboard = () => {
            </AnimatePresence>
         </header>
 
-        {activeTab === 'hero' && (
-          <HeroManager data={data.hero} onSave={(payload) => handleSave(updateHero, payload)} />
-        )}
-
-        {activeTab === 'about' && (
-          <AboutManager data={data.about} onSave={(payload) => handleSave(updateAbout, payload)} />
-        )}
 
         {activeTab === 'projects' && (
           <ProjectManager 

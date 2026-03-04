@@ -38,16 +38,10 @@ const Sidebar = ({ activeTab, setActiveTab, handleLogout, isOpen, setIsOpen }) =
         
         <nav className="flex-grow p-6 space-y-2 overflow-y-auto">
           <SidebarLink 
-            icon={<LayoutDashboard size={20} />} 
-            label="Hero Content" 
-            active={activeTab === 'hero'} 
-            onClick={() => handleLinkClick('hero')} 
-          />
-          <SidebarLink 
-            icon={<User size={20} />} 
-            label="About Section" 
-            active={activeTab === 'about'} 
-            onClick={() => handleLinkClick('about')} 
+            icon={<FolderKanban size={20} />} 
+            label="Manage Projects" 
+            active={activeTab === 'projects'} 
+            onClick={() => handleLinkClick('projects')} 
           />
           <SidebarLink 
             icon={<FolderKanban size={20} />} 
